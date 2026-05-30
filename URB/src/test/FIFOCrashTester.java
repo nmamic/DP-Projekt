@@ -28,11 +28,13 @@ public class FIFOCrashTester {
             // CRASH SIMULACIJA: ako je proces 1, crashaj nakon 2. poruke
             if (myId == 1 && i == 2) {
                 System.out.println("[" + myId + "] ==============================");
-                System.out.println("[" + myId + "] SIMULACIJA CRASH-a!");
+                System.out.println("[" + myId + "] SIMULACIJA CRASH-a!!!");
                 System.out.println("[" + myId + "] Proces 1 je pao!");
                 System.out.println("[" + myId + "] ==============================");
-                Thread.sleep(500);
-                System.exit(0);  // Prekini proces
+                System.out.flush();
+
+                fifo.markCrashed();
+                Runtime.getRuntime().halt(0);
             }
 
             Thread.sleep(100);

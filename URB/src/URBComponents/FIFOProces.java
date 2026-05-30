@@ -12,6 +12,12 @@ import java.util.TreeMap;
 
 public class FIFOProces extends Process {
 
+    private volatile boolean crashed = false;
+
+    public void markCrashed() {
+        crashed = true;
+    }
+
     // da ne obrađujemo istu poruku više puta
     private final Set<String> seen = new HashSet<>();
 
@@ -53,11 +59,13 @@ public class FIFOProces extends Process {
     }
 
     public void FIFO_Deliver(String m) {
+        if (crashed) return;
         System.out.println("Proces " + myId + " isporucio: " + m);
     }
 
     @Override
     public synchronized void handleMsg(Msg m, int src, String tag) {
+        if (crashed) return;
         String content = m.getMessage().trim();
 
         // format: origin seq payload...
