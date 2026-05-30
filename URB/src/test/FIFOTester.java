@@ -1,6 +1,6 @@
 package test;
 
-import URBComponents.FIFOProces;
+import FIFOComponents.FIFOProces;
 import components.Linker;
 import components.ListenerThread;
 
@@ -20,7 +20,7 @@ public class FIFOTester {
             }
         }
 
-        // pošalji VIŠE poruka zaredom od istog procesa
+        // pošalji više poruka zaredom od istog procesa
         for (int i = 1; i <= 3; i++) {
             System.out.println("[" + myId + "] Slanje poruke broj " + i);
             fifo.FIFO_Broadcast("Poruka_" + i + "_od_procesa_" + myId);

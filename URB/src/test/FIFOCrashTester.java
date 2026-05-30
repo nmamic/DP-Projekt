@@ -1,6 +1,6 @@
 package test;
 
-import URBComponents.FIFOProces;
+import FIFOComponents.FIFOProces;
 import components.Linker;
 import components.ListenerThread;
 

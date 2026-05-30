@@ -1,4 +1,4 @@
-package URBComponents;
+package FIFOComponents;
 
 import components.Linker;
 import components.Msg;
