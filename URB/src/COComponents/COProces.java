@@ -12,13 +12,12 @@ public class COProces extends URBProces {
 
     // causal_past_i[0..N-1]
     private final int[] causalPast;
-
     private final Set<COMessage> msgSet = new HashSet<>();
-
-    private final Set<String> deliveredCOTexts = new HashSet<>();
-
     private int seq = 0;
     private boolean done = false;
+
+    //za testiranje
+    private final Set<String> deliveredCOTexts = new HashSet<>();
 
     // koristi se samo za testiranje msgSet-a
     private boolean testDelayEnabled = false;
@@ -62,6 +61,7 @@ public class COProces extends URBProces {
         }
     }
 
+    //za test
     public synchronized void waitUntilDelivered(String text) {
         while (!deliveredCOTexts.contains(text)) {
             try {
@@ -73,12 +73,14 @@ public class COProces extends URBProces {
         }
     }
 
+    //
     @Override
     public void URB_Deliver(String m) {
+
         String content = stripUrbPrefix(m);
         COMessage message = COMessage.decode(content);
 
-        //test delay
+        //test delay - za simulaciju testa
         if (testDelayEnabled
                 && myId == 0
                 && message.sender == 2
@@ -167,6 +169,7 @@ public class COProces extends URBProces {
 
         String text = message.text.replace("_", " ");
 
+        //za test
         deliveredCOTexts.add(text);
 
         int j = message.sender;
