@@ -47,11 +47,22 @@ public class Connector {
         }
     }
     int getLocalPort(int id) { return Symbols.ServerPort + 10 + id; }
-    public void closeSockets(){
+    public void closeSockets() {
         try {
-            listener.close();
-            for (int i=0;i<link.length; i++) link[i].close();
-        } catch (Exception e) {System.err.println(e);}
+            if (listener != null && !listener.isClosed()) {
+                listener.close();
+            }
+
+            if (link != null) {
+                for (int i = 0; i < link.length; i++) {
+                    if (link[i] != null && !link[i].isClosed()) {
+                        link[i].close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println(e);
+        }
     }
 }
 

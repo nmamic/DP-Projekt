@@ -13,20 +13,31 @@ public class COProces extends URBProces {
     // causal_past_i[0..N-1]
     private final int[] causalPast;
 
-    // msg_set_i
     private final Set<COMessage> msgSet = new HashSet<>();
+
+    private final Set<String> deliveredCOTexts = new HashSet<>();
+
     private int seq = 0;
     private boolean done = false;
+
+    // koristi se samo za testiranje msgSet-a
+    private boolean testDelayEnabled = false;
 
     public COProces(Linker linker) {
         super(linker);
         this.causalPast = new int[N];
     }
 
+    public void enableTestDelay() {
+        this.testDelayEnabled = true;
+    }
+
     public synchronized void CO_Broadcast(String text) {
 
         done = false;
+
         int[] snapshot = Arrays.copyOf(causalPast, N);
+
         COMessage message = new COMessage(
                 myId,
                 ++seq,
@@ -34,8 +45,13 @@ public class COProces extends URBProces {
                 text.replace(" ", "_")
         );
 
-        String encoded = message.encode();
-        super.URB_Broadcast(encoded);
+        System.out.println(
+                "[P" + myId + "] CO_Broadcast: " + text +
+                        ", causalPast=" + Arrays.toString(snapshot)
+        );
+
+        super.URB_Broadcast(message.encode());
+
         while (!done) {
             try {
                 wait();
@@ -46,15 +62,50 @@ public class COProces extends URBProces {
         }
     }
 
+    public synchronized void waitUntilDelivered(String text) {
+        while (!deliveredCOTexts.contains(text)) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
 
     @Override
-    public synchronized void URB_Deliver(String m) {
-        super.URB_Deliver(m);
-
+    public void URB_Deliver(String m) {
         String content = stripUrbPrefix(m);
         COMessage message = COMessage.decode(content);
 
-        tryCOMessage(message);
+        //test delay
+        if (testDelayEnabled
+                && myId == 0
+                && message.sender == 2
+                && message.text.replace("_", " ").equals("m0")) {
+
+            System.out.println("[P0] TEST DELAY: Odgađam obradu m0 od P2 za 10 sekundi.");
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
+                synchronized (COProces.this) {
+                    System.out.println("[P0] TEST DELAY: Sada nastavljam obradu m0 od P2.");
+                    tryCOMessage(message);
+                }
+            }).start();
+
+            return;
+        }
+
+        synchronized (this) {
+            tryCOMessage(message);
+        }
     }
 
     private String stripUrbPrefix(String m) {
@@ -70,25 +121,39 @@ public class COProces extends URBProces {
     private void tryCOMessage(COMessage message) {
 
         if (canDeliver(message)) {
-            CO_Deliver(message);
-
-            int j = message.sender;
-            causalPast[j] = message.causalPast[j] + 1;
-
-            if (message.sender == myId) {
-                done = true;
-                notifyAll();
-            }
-
+            deliverAndUpdate(message);
             checkMsgSet();
-
         } else {
+            System.out.println(
+                    "[P" + myId + "] NE MOGU CO-deliverati: " +
+                            message.text.replace("_", " ") +
+                            " od P" + message.sender
+            );
+
+            System.out.println(
+                    "[P" + myId + "] Spremam poruku u msgSet."
+            );
+
+            System.out.println(
+                    "[P" + myId + "] causalPast poruke = " +
+                            Arrays.toString(message.causalPast)
+            );
+
+            System.out.println(
+                    "[P" + myId + "] moj causalPast = " +
+                            Arrays.toString(causalPast)
+            );
 
             msgSet.add(message);
+
+            System.out.println(
+                    "[P" + myId + "] msgSet.size = " + msgSet.size()
+            );
         }
     }
 
     private boolean canDeliver(COMessage message) {
+
         for (int k = 0; k < N; k++) {
             if (causalPast[k] < message.causalPast[k]) {
                 return false;
@@ -98,19 +163,32 @@ public class COProces extends URBProces {
         return true;
     }
 
+    private void deliverAndUpdate(COMessage message) {
 
-    private void CO_Deliver(COMessage message) {
+        String text = message.text.replace("_", " ");
+
+        deliveredCOTexts.add(text);
+
+        int j = message.sender;
+        causalPast[j] = message.causalPast[j] + 1;
 
         System.out.println(
-                "Proces " + myId +
-                        " CO-deliverao: " + message.text.replace("_", " ") +
+                "[P" + myId + "] CO_Deliver: " + text +
                         " od P" + message.sender +
-                        " seq=" + message.seq +
-                        " causalPast=" + Arrays.toString(message.causalPast)
+                        ", seq=" + message.seq +
+                        ", causalPast poruke=" + Arrays.toString(message.causalPast) +
+                        ", moj causalPast nakon delivera=" + Arrays.toString(causalPast)
         );
+
+        if (message.sender == myId) {
+            done = true;
+        }
+
+        notifyAll();
     }
 
     private void checkMsgSet() {
+
         boolean deliveredSomething;
 
         do {
@@ -122,18 +200,17 @@ public class COProces extends URBProces {
                 COMessage message = iterator.next();
 
                 if (canDeliver(message)) {
-
-                    CO_Deliver(message);
-
-
-                    int j = message.sender;
-                    causalPast[j] = message.causalPast[j] + 1;
-                    if (message.sender == myId) {
-                        done = true;
-                        notifyAll();
-                    }
+                    System.out.println(
+                            "[P" + myId + "] Poruka iz msgSet sada može biti CO-deliverana: " +
+                                    message.text.replace("_", " ")
+                    );
 
                     iterator.remove();
+                    deliverAndUpdate(message);
+
+                    System.out.println(
+                            "[P" + myId + "] msgSet.size = " + msgSet.size()
+                    );
 
                     deliveredSomething = true;
                 }
