@@ -29,7 +29,7 @@ public class COMsgSetTester {
 
         if (myId == 0) {
             proces.enableTestDelay();
-            log(myId, "Uključen test delay za m0 od P2.");
+            //log(myId, "Uključen test delay za m0 od P2.");
         }
 
         log(myId, "Pokrećem listenere...");
@@ -58,8 +58,8 @@ public class COMsgSetTester {
             log(myId, "Deliverao sam m0, sada šaljem m1_nakon_m0.");
             proces.CO_Broadcast("m1_nakon_m0");
 
-            log(myId, "Završio slanje m1_nakon_m0.");
         }
+
 
         if (myId == 0) {
             log(myId, "P0 je proces na kojem očekujemo msgSet.");
