@@ -2,4 +2,7 @@ URB/out/
 URB/.idea/
 *.iml
 *.class
+.idea
+.out
+.DS_Store
 
