@@ -73,7 +73,7 @@ public class COProces extends URBProces {
         }
     }
 
-    //
+
     @Override
     public void URB_Deliver(String m) {
 

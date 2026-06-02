@@ -29,7 +29,7 @@ public class FIFOTester {
             Thread.sleep(100);
         }
 
-        System.out.println("[" + myId + "] Sve poruke poslane, čekam na drive.");
+        System.out.println("[" + myId + "] Sve poruke poslane.");
         Thread.sleep(2000);
     }
 }
